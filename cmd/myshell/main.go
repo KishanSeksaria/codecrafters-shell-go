@@ -17,6 +17,7 @@ func main() {
 		inputCommand, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 
 		if strings.TrimSpace(inputCommand) == "exit 0" {
+			// exit with status 0
 			os.Exit(0)
 		}
 
