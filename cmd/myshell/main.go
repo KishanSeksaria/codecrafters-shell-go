@@ -12,10 +12,10 @@ func main() {
 	fmt.Fprint(os.Stdout, "$ ")
 
 	// Wait for user input
-	inputCommand, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 
-	if strings.Contains(inputCommand, "invalid") {
+	for {
+		inputCommand, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+
 		fmt.Printf("%s: command not found\n", strings.TrimSpace(inputCommand))
-		os.Exit(1)
 	}
 }
