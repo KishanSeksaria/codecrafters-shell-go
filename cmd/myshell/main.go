@@ -16,6 +16,10 @@ func main() {
 
 		inputCommand, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 
+		if strings.TrimSpace(inputCommand) == "exit 0" {
+			break
+		}
+
 		fmt.Printf("%s: command not found\n", strings.TrimSpace(inputCommand))
 	}
 }
