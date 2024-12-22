@@ -38,12 +38,12 @@ func handleCommand(inputCommand string) string {
 		// Print the type of the command
 		command := strings.TrimSpace(strings.TrimPrefix(inputCommand, "type"))
 		if slices.Contains(builtInCommands, command) {
-			return fmt.Sprintf("%s is a shell builtin\n", command)
+			return fmt.Sprintf("%s is a shell builtin", command)
 		} else {
-			return fmt.Sprintf("%s: not found\n", command)
+			return fmt.Sprintf("%s: not found", command)
 		}
 	} else {
-		return fmt.Sprintf("%s: command not found\n", strings.TrimSpace(inputCommand))
+		return fmt.Sprintf("%s: command not found", strings.TrimSpace(inputCommand))
 	}
 	return ""
 }
