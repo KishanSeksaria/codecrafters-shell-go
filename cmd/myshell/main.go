@@ -4,49 +4,83 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 func main() {
-
+	initCommands()
 	for {
-		// Print the shell prompt
 		fmt.Fprint(os.Stdout, "$ ")
-
 		// Wait for user input
-		inputCommand, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		inputCommand = strings.TrimSpace(inputCommand)
-
-		// Handle the command
-		output := handleCommand(inputCommand)
-		fmt.Println(output)
+		in, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			fmt.Printf("error reading from stdin: %s", err.Error())
+			os.Exit(1)
+		}
+		inputs := strings.Split(strings.TrimSpace(in), " ")
+		cmd := inputs[0]
+		args := inputs[1:]
+		cmdFn, ok := commands[cmd]
+		if !ok {
+			notFound(cmd)
+		} else {
+			cmdFn(args)
+		}
 	}
 }
 
-func handleCommand(inputCommand string) string {
-	// List of built-in commands
-	builtInCommands := []string{"echo", "exit", "type"}
+type (
+	cmdFnc func([]string)
+)
 
-	// Exit the shell if the user types "exit 0"
-	if inputCommand == "exit 0" {
-		os.Exit(0)
+var commands = make(map[string]cmdFnc)
 
-	} else if strings.HasPrefix(inputCommand, "echo") {
-		// Print the string after "echo"
-		return strings.TrimSpace(strings.TrimPrefix(inputCommand, "echo"))
+func registerCommand(cmd string, fn cmdFnc) {
+	commands[cmd] = fn
+}
 
-	} else if strings.HasPrefix(inputCommand, "type") {
-		// Print the type of the command
-		command := strings.TrimSpace(strings.TrimPrefix(inputCommand, "type"))
-		if slices.Contains(builtInCommands, command) {
-			return fmt.Sprintf("%s is a shell builtin", command)
-		} else {
-			return fmt.Sprintf("%s: not found", command)
-		}
-		
-	} else {
-		return fmt.Sprintf("%s: command not found", strings.TrimSpace(inputCommand))
+func initCommands() {
+	registerCommand("exit", exit)
+	registerCommand("echo", echo)
+	registerCommand("type", typer)
+}
+
+func notFound(cmd string) {
+	fmt.Printf("%s: command not found\n", cmd)
+}
+
+func exit(args []string) {
+	if len(args) == 0 {
+		os.Exit(1)
 	}
-	return ""
+	if code, err := strconv.Atoi(args[0]); err == nil {
+		os.Exit(code)
+	}
+}
+
+func echo(args []string) {
+	fmt.Println(strings.Join(args, " "))
+}
+
+func typer(args []string) {
+	if len(args) == 0 {
+		fmt.Println(os.Stdout, "")
+		fmt.Println("")
+	}
+	_, builtin := commands[args[0]]
+	if builtin {
+		fmt.Printf("%s is a shell builtin\n", args[0])
+		return
+	}
+	paths := strings.Split(os.Getenv("PATH"), ":")
+	for _, path := range paths {
+		fp := filepath.Join(path, args[0])
+		if _, err := os.Stat(fp); err == nil {
+			fmt.Println(fp)
+			return
+		}
+	}
+	fmt.Printf("%s not found\n", args[0])
 }
