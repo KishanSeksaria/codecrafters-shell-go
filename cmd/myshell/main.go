@@ -31,9 +31,11 @@ func handleCommand(inputCommand string) string {
 	// Exit the shell if the user types "exit 0"
 	if inputCommand == "exit 0" {
 		os.Exit(0)
+
 	} else if strings.HasPrefix(inputCommand, "echo") {
 		// Print the string after "echo"
 		return strings.TrimSpace(strings.TrimPrefix(inputCommand, "echo"))
+
 	} else if strings.HasPrefix(inputCommand, "type") {
 		// Print the type of the command
 		command := strings.TrimSpace(strings.TrimPrefix(inputCommand, "type"))
@@ -42,6 +44,7 @@ func handleCommand(inputCommand string) string {
 		} else {
 			return fmt.Sprintf("%s: not found", command)
 		}
+		
 	} else {
 		return fmt.Sprintf("%s: command not found", strings.TrimSpace(inputCommand))
 	}
