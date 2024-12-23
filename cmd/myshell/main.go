@@ -54,7 +54,8 @@ func notFound(cmd string, args []string, outputFile string) {
 			return
 		}
 		defer file.Close()
-		outputWriter = file
+		// Use MultiWriter to write to both file and stdout
+		outputWriter = io.MultiWriter(file, os.Stdout)
 	} else {
 		outputWriter = os.Stdout
 	}
@@ -320,14 +321,15 @@ func main() {
 		} else {
 			result := execute(commandArguments)
 			if outputFile != "" {
-				// Write the output to the file
+				// Write the output to both file and stdout
 				file, err := os.Create(outputFile)
 				if err != nil {
 					fmt.Printf("error creating file: %s\n", err.Error())
 					return
 				}
 				defer file.Close()
-				file.WriteString(result)
+				writer := io.MultiWriter(file, os.Stdout)
+				writer.Write([]byte(result))
 			} else {
 				fmt.Println(result)
 			}
