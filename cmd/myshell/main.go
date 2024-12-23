@@ -200,56 +200,73 @@ func findCommandInPath(cmd string) (string, error) {
 	return "", fmt.Errorf("command not found")
 }
 
-// FUnction to parse input into command and arguments
+// Function to parse input into command and arguments
 func parseInput(input string) (string, []string) {
-	// Split input into command and arguments
+	// Trim input to remove leading and trailing spaces
 	input = strings.TrimSpace(input)
-	spaceIndex := strings.Index(input, " ")
-	if spaceIndex == -1 {
-		return input, []string{}
+	if len(input) == 0 {
+		return "", []string{}
 	}
 
-	// Get the command and arguments
-	command := input[:spaceIndex]
-	input = input[spaceIndex+1:]
+	// Find the command (first word before the first space)
+	spaceIndex := strings.Index(input, " ")
+	var command string
+	if spaceIndex == -1 {
+		// If no spaces, the input is the command with no arguments
+		command = input
+		return command, []string{}
+	} else {
+		command = input[:spaceIndex]
+		input = input[spaceIndex+1:]
+	}
+
 	arguments := []string{}
-	for len(input) > 0 {
-		if strings.HasPrefix(input, "'") {
-			// Get the argument in single quotes
-			endQuote := strings.Index(input[1:], "'")
-			if endQuote == -1 {
-				return command, []string{}
-			}
-			argument := input[1 : endQuote+1]
-			input = input[endQuote+2:]
-			arguments = append(arguments, argument)
-		} else if strings.HasPrefix(input, "\"") {
-			// Get the argument in double quotes
-			endQuote := strings.Index(input[1:], "\"")
-			if endQuote == -1 {
-				return command, []string{}
-			}
-			argument := input[1 : endQuote+1]
-			input = input[endQuote+2:]
-			arguments = append(arguments, argument)
-		} else {
-			// Add the word to the arguments, and omit spaces between words
-			spaceIndex := strings.Index(input, " ")
-			if spaceIndex == -1 {
-				arguments = append(arguments, input)
-				break
-			}
-			arg := input[:spaceIndex]
-			if strings.TrimSpace(arg) != "" {
-				if !strings.HasPrefix(arg, "\\") && strings.HasSuffix(arg, "\\") {
-					arguments = append(arguments, arg)
-				} else {
-					arguments = append(arguments, arg[1:])
-				}
+	currentArg := ""
+	inSingleQuotes := false
+	inDoubleQuotes := false
+	escapeNext := false
+
+	// Parse each character
+	for _, char := range input {
+		switch {
+		case escapeNext:
+			// Handle escaped characters
+			currentArg += string(char)
+			escapeNext = false
+
+		case char == '\\':
+			// Escape the next character
+			escapeNext = true
+
+		case char == '\'' && !inDoubleQuotes:
+			// Toggle single-quote state
+			inSingleQuotes = !inSingleQuotes
+
+		case char == '"' && !inSingleQuotes:
+			// Toggle double-quote state
+			inDoubleQuotes = !inDoubleQuotes
+
+		case char == ' ' && !inSingleQuotes && !inDoubleQuotes:
+			// Space ends the current argument if not in quotes
+			if len(currentArg) > 0 {
+				arguments = append(arguments, currentArg)
+				currentArg = ""
 			}
 
-			input = input[spaceIndex+1:]
+		default:
+			// Add the character to the current argument
+			currentArg += string(char)
 		}
+	}
+
+	// Add the last argument if it's not empty
+	if len(currentArg) > 0 {
+		arguments = append(arguments, currentArg)
+	}
+
+	// Handle mismatched quotes
+	if inSingleQuotes || inDoubleQuotes {
+		return command, []string{}
 	}
 
 	return command, arguments
