@@ -48,7 +48,7 @@ func main() {
 					return
 				}
 				defer file.Close()
-				file.WriteString(result)
+				file.WriteString(result + "\n")
 			} else {
 				fmt.Println(result)
 			}
