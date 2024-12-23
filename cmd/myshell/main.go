@@ -53,7 +53,7 @@ func registerCommand(cmd string, fn cmdFnc) {
 func initCommands() {
 	registerCommand("exit", exit)
 	registerCommand("echo", echo)
-	registerCommand("type", typer)
+	registerCommand("type", type_)
 	registerCommand("pwd", pwd)
 	registerCommand("cd", cd)
 	registerCommand("cat", cat)
@@ -95,26 +95,30 @@ func echo(args []string) {
 }
 
 // Command functions: type command
-func typer(args []string) {
+func type_(args []string) {
 	if len(args) == 0 {
 		fmt.Println("type: usage: type <command>")
 		return
 	}
 
+	command := args[0]
+
 	// Check if the command is a shell builtin
-	_, builtin := commands[args[0]]
-	if builtin {
-		fmt.Printf("%s is a shell builtin\n", args[0])
-		return
+	if command != "cat" {
+		_, builtin := commands[command]
+		if builtin {
+			fmt.Printf("%s is a shell builtin\n", command)
+			return
+		}
 	}
 
 	// Check if the command exists in the PATH
-	cmdPath, err := findCommandInPath(args[0])
+	cmdPath, err := findCommandInPath(command)
 
 	if err != nil {
-		fmt.Printf("%s: not found\n", args[0])
+		fmt.Printf("%s: not found\n", command)
 	} else {
-		fmt.Printf("%s is %s\n", args[0], cmdPath)
+		fmt.Printf("%s is %s\n", command, cmdPath)
 	}
 }
 
@@ -171,6 +175,7 @@ func cat(args []string) {
 		}
 		defer file.Close()
 
+		// Read the file
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			output += scanner.Text()
@@ -198,7 +203,6 @@ func findCommandInPath(cmd string) (string, error) {
 // FUnction to parse input into command and arguments
 func parseInput(input string) (string, []string) {
 	// Split input into command and arguments
-	// Find the first word in the input
 	input = strings.TrimSpace(input)
 	spaceIndex := strings.Index(input, " ")
 	if spaceIndex == -1 {
