@@ -160,6 +160,8 @@ func cat(args []string) {
 		return
 	}
 
+	output := ""
+
 	// Read the files
 	for _, arg := range args {
 		file, err := os.Open(arg)
@@ -171,9 +173,11 @@ func cat(args []string) {
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			fmt.Println(scanner.Text())
+			output += scanner.Text()
 		}
 	}
+
+	fmt.Println(output)
 }
 
 // Helper functions
