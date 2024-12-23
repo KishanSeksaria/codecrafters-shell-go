@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -38,7 +39,7 @@ func main() {
 		// Get command execution function
 		execute, ok := commands[inputCommand]
 		if !ok {
-			notFound(inputCommand)
+			notFound(inputCommand, commandArguments)
 		} else {
 			execute(commandArguments)
 		}
@@ -58,8 +59,23 @@ func initCommands() {
 }
 
 // Function to handle command not found
-func notFound(cmd string) {
-	fmt.Printf("%s: command not found\n", cmd)
+func notFound(cmd string, args []string) {
+	// Check if the command exists in the PATH, and if it does, execute it
+	cmdPath, err := findCommandInPath(cmd)
+
+	if err != nil {
+		fmt.Printf("%s: command not found\n", cmd)
+	} else {
+		// Execute the command
+		args = append([]string{cmdPath}, args...)
+		cmd := exec.Command(cmdPath, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("error executing command: %s\n", err.Error())
+		}
+	}
 }
 
 // Command functions: exit command
@@ -91,17 +107,26 @@ func typer(args []string) {
 		return
 	}
 
-	// Check if the command is in the PATH
+	// Check if the command exists in the PATH
+	cmdPath, err := findCommandInPath(args[0])
+
+	if err != nil {
+		fmt.Printf("%s: not found\n", args[0])
+	} else {
+		fmt.Printf("%s is %s\n", args[0], cmdPath)
+	}
+}
+
+// Function to find the command in the PATH
+func findCommandInPath(cmd string) (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range paths {
-		fp := filepath.Join(path, args[0])
+		fp := filepath.Join(path, cmd)
 
 		// Check if the file exists
 		if _, err := os.Stat(fp); err == nil {
-			fmt.Println(fp)
-			return
+			return fp, nil
 		}
 	}
-
-	fmt.Printf("%s: not found\n", args[0])
+	return "", fmt.Errorf("command not found")
 }
