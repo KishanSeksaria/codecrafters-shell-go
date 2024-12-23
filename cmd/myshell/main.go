@@ -56,6 +56,7 @@ func initCommands() {
 	registerCommand("type", typer)
 	registerCommand("pwd", pwd)
 	registerCommand("cd", cd)
+	registerCommand("cat", cat)
 }
 
 // Function to handle command not found
@@ -149,6 +150,27 @@ func cd(args []string) {
 	// Change to the target directory
 	if err := os.Chdir(targetDir); err != nil {
 		fmt.Printf("cd: %s: No such file or directory\n", targetDir)
+	}
+}
+
+// Command functions: cat command
+func cat(args []string) {
+	if len(args) == 0 {
+		fmt.Println("cat: usage: cat <file>")
+		return
+	}
+
+	// Read the file
+	file, err := os.Open(args[0])
+	if err != nil {
+		fmt.Printf("cat: %s: No such file or directory\n", args[0])
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
 	}
 }
 
