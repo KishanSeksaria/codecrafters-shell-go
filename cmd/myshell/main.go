@@ -230,13 +230,24 @@ func parseInput(input string) (string, []string) {
 	for _, char := range input {
 		switch {
 		case escapeNext:
-			// Always add the escaped character, even in double quotes
-			currentArg += string(char)
+			// Handle escaped characters
+			if inDoubleQuotes {
+				// Allow escaping only for specific characters inside double quotes
+				if char == '$' || char == '`' || char == '"' || char == '\\' || char == '\n' {
+					currentArg += string(char)
+				} else {
+					// Treat the backslash as a literal character if the char isn't escapable
+					currentArg += "\\" + string(char)
+				}
+			} else {
+				// Outside quotes, escape any character
+				currentArg += string(char)
+			}
 			escapeNext = false
 
 		case char == '\\':
-			// Escape the next character only in double quotes or globally outside quotes
-			escapeNext = inDoubleQuotes || !inSingleQuotes
+			// Escape the next character
+			escapeNext = true
 
 		case char == '\'' && !inDoubleQuotes:
 			// Toggle single-quote state
