@@ -67,8 +67,8 @@ func notFound(cmd string, args []string) {
 		fmt.Printf("%s: command not found\n", cmd)
 	} else {
 		// Execute the command
-		args = append([]string{cmdPath}, args...)
-		cmd := exec.Command(cmdPath, args...)
+		arg := strings.Join(args, " ")
+		cmd := exec.Command(cmdPath, arg)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
