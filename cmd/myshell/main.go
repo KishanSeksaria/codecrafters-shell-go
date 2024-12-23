@@ -223,6 +223,15 @@ func parseInput(input string) (string, []string) {
 			argument := input[1 : endQuote+1]
 			input = input[endQuote+2:]
 			arguments = append(arguments, argument)
+		} else if strings.HasPrefix(input, "\"") {
+			// Get the argument in double quotes
+			endQuote := strings.Index(input[1:], "\"")
+			if endQuote == -1 {
+				return command, []string{}
+			}
+			argument := input[1 : endQuote+1]
+			input = input[endQuote+2:]
+			arguments = append(arguments, argument)
 		} else {
 			// Add the word to the arguments, and omit spaces between words
 			spaceIndex := strings.Index(input, " ")
