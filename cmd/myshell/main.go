@@ -327,7 +327,7 @@ func main() {
 					return
 				}
 				defer file.Close()
-				file.WriteString(result + "\n")
+				file.WriteString(result)
 			} else {
 				fmt.Println(result)
 			}
