@@ -241,7 +241,7 @@ func parseInput(input string) (string, []string) {
 			}
 			arg := input[:spaceIndex]
 			if strings.TrimSpace(arg) != "" {
-				if !strings.HasPrefix(arg, "\\") {
+				if !strings.HasPrefix(arg, "\\") && strings.HasSuffix(arg, "\\") {
 					arguments = append(arguments, arg)
 				} else {
 					arguments = append(arguments, arg[1:])
