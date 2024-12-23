@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,31 +76,37 @@ func initCommands() {
 func notFound(cmd string, args []string, outputFile string) {
 	// Check if the command exists in the PATH, and if it does, execute it
 	cmdPath, err := findCommandInPath(cmd)
-
 	if err != nil {
 		fmt.Printf("%s: command not found\n", cmd)
+		return
+	}
+
+	// Prepare the command execution
+	command := exec.Command(cmdPath, args...)
+
+	// Redirect output to a file or Stdout
+	var outputWriter io.Writer
+	if outputFile != "" {
+		// If the file does not exist, create it
+		file, err := os.Create(outputFile)
+		if err != nil {
+			fmt.Printf("error creating file: %s\n", err.Error())
+			return
+		}
+		defer file.Close()
+		outputWriter = file
 	} else {
-		// Execute the command
-		arg := strings.Join(args, " ")
-		cmd := exec.Command(cmdPath, arg)
-		// If the output file is provided, redirect the output to the file
-		if outputFile != "" {
-			// If the file does not exist, create it
-			file, err := os.Create(outputFile)
-			if err != nil {
-				fmt.Printf("error creating file: %s\n", err.Error())
-				return
-			}
-			defer file.Close()
-			cmd.Stdout = file
-		} else {
-			cmd.Stdout = os.Stdout
-		}
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		if err := cmd.Run(); err != nil {
-			fmt.Printf("error executing command: %s\n", err.Error())
-		}
+		outputWriter = os.Stdout
+	}
+
+	// Attach output writers for Stdout and Stderr
+	command.Stdout = outputWriter
+	command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+
+	// Run the command
+	if err := command.Run(); err != nil {
+		fmt.Printf("error executing command: %s\n", err.Error())
 	}
 }
 
