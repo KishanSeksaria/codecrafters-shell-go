@@ -245,13 +245,17 @@ func parseInput(input string) (string, []string) {
 			}
 			escapeNext = false
 
-		case char == '\\':
+		case char == '\\' && !inSingleQuotes:
 			// Escape the next character
 			escapeNext = true
 
-		case char == '\'' && !inDoubleQuotes:
-			// Toggle single-quote state
-			inSingleQuotes = !inSingleQuotes
+		case char == '\'':
+			// Toggle single-quote state (backslashes are treated literally)
+			if inSingleQuotes {
+				inSingleQuotes = false
+			} else {
+				inSingleQuotes = true
+			}
 
 		case char == '"' && !inSingleQuotes:
 			// Toggle double-quote state
