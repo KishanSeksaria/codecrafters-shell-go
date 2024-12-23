@@ -56,6 +56,7 @@ func initCommands() {
 	registerCommand("exit", exit)
 	registerCommand("echo", echo)
 	registerCommand("type", typer)
+	registerCommand("pwd", pwd)
 }
 
 // Function to handle command not found
@@ -117,6 +118,17 @@ func typer(args []string) {
 	}
 }
 
+// Command functions: pwd command
+func pwd(args []string) {
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("error getting current directory: %s\n", err.Error())
+		return
+	}
+	fmt.Println(dir)
+}
+
+// Helper functions
 // Function to find the command in the PATH
 func findCommandInPath(cmd string) (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), ":")
