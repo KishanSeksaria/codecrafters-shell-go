@@ -57,6 +57,7 @@ func initCommands() {
 	registerCommand("echo", echo)
 	registerCommand("type", typer)
 	registerCommand("pwd", pwd)
+	registerCommand("cd", cd)
 }
 
 // Function to handle command not found
@@ -126,6 +127,18 @@ func pwd(args []string) {
 		return
 	}
 	fmt.Println(dir)
+}
+
+// Command functions: cd command
+func cd(args []string) {
+	if len(args) == 0 {
+		fmt.Println("cd: usage: cd <directory>")
+		return
+	}
+
+	if err := os.Chdir(args[0]); err != nil {
+		fmt.Printf("cd: %s: No such file or directory", args[0])
+	}
 }
 
 // Helper functions
