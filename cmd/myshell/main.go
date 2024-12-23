@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	cmdFnc func([]string)
+	cmdFnc func([]string) string
 )
 
 var commands = make(map[string]cmdFnc)
@@ -32,14 +32,26 @@ func main() {
 		}
 
 		// Parse input
-		inputCommand, commandArguments := parseInput(input)
+		inputCommand, commandArguments, outputFile := parseInput(input)
 
 		// Get command execution function
 		execute, ok := commands[inputCommand]
 		if !ok {
-			notFound(inputCommand, commandArguments)
+			notFound(inputCommand, commandArguments, outputFile)
 		} else {
-			execute(commandArguments)
+			result := execute(commandArguments)
+			if outputFile != "" {
+				// Write the output to the file
+				file, err := os.Create(outputFile)
+				if err != nil {
+					fmt.Printf("error creating file: %s\n", err.Error())
+					return
+				}
+				defer file.Close()
+				file.WriteString(result)
+			} else {
+				fmt.Println(result)
+			}
 		}
 	}
 }
@@ -60,7 +72,7 @@ func initCommands() {
 }
 
 // Function to handle command not found
-func notFound(cmd string, args []string) {
+func notFound(cmd string, args []string, outputFile string) {
 	// Check if the command exists in the PATH, and if it does, execute it
 	cmdPath, err := findCommandInPath(cmd)
 
@@ -70,7 +82,19 @@ func notFound(cmd string, args []string) {
 		// Execute the command
 		arg := strings.Join(args, " ")
 		cmd := exec.Command(cmdPath, arg)
-		cmd.Stdout = os.Stdout
+		// If the output file is provided, redirect the output to the file
+		if outputFile != "" {
+			// If the file does not exist, create it
+			file, err := os.Create(outputFile)
+			if err != nil {
+				fmt.Printf("error creating file: %s\n", err.Error())
+				return
+			}
+			defer file.Close()
+			cmd.Stdout = file
+		} else {
+			cmd.Stdout = os.Stdout
+		}
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 		if err := cmd.Run(); err != nil {
@@ -80,25 +104,25 @@ func notFound(cmd string, args []string) {
 }
 
 // Command functions: exit command
-func exit(args []string) {
+func exit(args []string) string {
 	if len(args) == 0 {
 		os.Exit(1)
 	}
 	if code, err := strconv.Atoi(args[0]); err == nil {
 		os.Exit(code)
 	}
+	return ""
 }
 
 // Command functions: echo command
-func echo(args []string) {
-	fmt.Println(strings.Join(args, " "))
+func echo(args []string) string {
+	return strings.Join(args, " ")
 }
 
 // Command functions: type command
-func type_(args []string) {
+func type_(args []string) string {
 	if len(args) == 0 {
-		fmt.Println("type: usage: type <command>")
-		return
+		return "type: usage: type <command>"
 	}
 
 	command := args[0]
@@ -107,8 +131,7 @@ func type_(args []string) {
 	if command != "cat" {
 		_, builtin := commands[command]
 		if builtin {
-			fmt.Printf("%s is a shell builtin\n", command)
-			return
+			return fmt.Sprintf("%s is a shell builtin", command)
 		}
 	}
 
@@ -116,27 +139,25 @@ func type_(args []string) {
 	cmdPath, err := findCommandInPath(command)
 
 	if err != nil {
-		fmt.Printf("%s: not found\n", command)
+		return fmt.Sprintf("%s: not found", command)
 	} else {
-		fmt.Printf("%s is %s\n", command, cmdPath)
+		return fmt.Sprintf("%s is %s", command, cmdPath)
 	}
 }
 
 // Command functions: pwd command
-func pwd(args []string) {
+func pwd(args []string) string {
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("error getting current directory: %s\n", err.Error())
-		return
+		return fmt.Sprintf("error getting current directory: %s", err.Error())
 	}
-	fmt.Println(dir)
+	return dir
 }
 
 // Command functions: cd command
-func cd(args []string) {
+func cd(args []string) string {
 	if len(args) == 0 {
-		fmt.Println("cd: usage: cd <directory>")
-		return
+		return "cd: usage: cd <directory>"
 	}
 
 	targetDir := args[0]
@@ -145,23 +166,23 @@ func cd(args []string) {
 	if targetDir == "~" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Printf("error getting home directory: %s\n", err.Error())
-			return
+			return fmt.Sprintf("error getting home directory: %s", err.Error())
 		}
 		targetDir = homeDir
 	}
 
 	// Change to the target directory
 	if err := os.Chdir(targetDir); err != nil {
-		fmt.Printf("cd: %s: No such file or directory\n", targetDir)
+		return fmt.Sprintf("cd: %s: No such file or directory", targetDir)
+	} else {
+		return ""
 	}
 }
 
 // Command functions: cat command
-func cat(args []string) {
+func cat(args []string) string {
 	if len(args) == 0 {
-		fmt.Println("cat: usage: cat <file>")
-		return
+		return "cat: usage: cat <file1> <file2> ..."
 	}
 
 	output := ""
@@ -170,8 +191,7 @@ func cat(args []string) {
 	for _, arg := range args {
 		file, err := os.Open(arg)
 		if err != nil {
-			fmt.Printf("cat: %s: No such file or directory\n", arg)
-			return
+			return fmt.Sprintf("cat: %s: No such file or directory", arg)
 		}
 		defer file.Close()
 
@@ -182,7 +202,7 @@ func cat(args []string) {
 		}
 	}
 
-	fmt.Println(output)
+	return output
 }
 
 // Helper functions
@@ -201,11 +221,23 @@ func findCommandInPath(cmd string) (string, error) {
 }
 
 // Function to parse input into command and arguments
-func parseInput(input string) (string, []string) {
+func parseInput(input string) (string, []string, string) {
 	// Trim input to remove leading and trailing spaces
 	input = strings.TrimSpace(input)
 	if len(input) == 0 {
-		return "", []string{}
+		return "", []string{}, ""
+	}
+
+	// Find the command (first word before the first space)
+	spaceIndex := strings.Index(input, " ")
+	var command string
+	if spaceIndex == -1 {
+		// If no spaces, the input is the command with no arguments
+		command = input
+		return command, []string{}, ""
+	} else {
+		command = input[:spaceIndex]
+		input = input[spaceIndex+1:]
 	}
 
 	arguments := []string{}
@@ -213,6 +245,7 @@ func parseInput(input string) (string, []string) {
 	inSingleQuotes := false
 	inDoubleQuotes := false
 	escapeNext := false
+	outputFile := ""
 
 	// Parse each character
 	for _, char := range input {
@@ -224,11 +257,9 @@ func parseInput(input string) (string, []string) {
 				if char == '$' || char == '`' || char == '"' || char == '\\' || char == '\n' {
 					currentArg += string(char)
 				} else {
-					// Treat the backslash as a literal character if the char isn't escapable
 					currentArg += "\\" + string(char)
 				}
 			} else {
-				// Outside quotes, escape any character
 				currentArg += string(char)
 			}
 			escapeNext = false
@@ -240,10 +271,8 @@ func parseInput(input string) (string, []string) {
 		case char == '\'':
 			// Handle single quotes
 			if inDoubleQuotes {
-				// Add single quotes literally when inside double quotes
 				currentArg += string(char)
 			} else {
-				// Toggle single-quote state outside of double quotes
 				inSingleQuotes = !inSingleQuotes
 			}
 
@@ -269,6 +298,24 @@ func parseInput(input string) (string, []string) {
 		arguments = append(arguments, currentArg)
 	}
 
-	// Return the command and arguments
-	return arguments[0], arguments[1:]
+	// Handle mismatched quotes
+	if inSingleQuotes || inDoubleQuotes {
+		return command, []string{}, ""
+	}
+
+	// Process for redirection
+	for i := 0; i < len(arguments); i++ {
+		arg := arguments[i]
+		if arg == ">" || arg == "1>" {
+			// Ensure there's a file name after the redirection symbol
+			if i+1 < len(arguments) {
+				outputFile = arguments[i+1]
+				// Remove the redirection symbol and the output file from arguments
+				arguments = append(arguments[:i], arguments[i+2:]...)
+				break
+			}
+		}
+	}
+
+	return command, arguments, outputFile
 }
