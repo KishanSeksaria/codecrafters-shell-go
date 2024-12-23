@@ -32,9 +32,7 @@ func main() {
 		}
 
 		// Parse input
-		inputs := strings.Split(strings.TrimSpace(input), " ")
-		inputCommand := inputs[0]
-		commandArguments := inputs[1:]
+		inputCommand, commandArguments := parseInput(input)
 
 		// Get command execution function
 		execute, ok := commands[inputCommand]
@@ -167,4 +165,43 @@ func findCommandInPath(cmd string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("command not found")
+}
+
+// FUnction to parse input into command and arguments
+func parseInput(input string) (string, []string) {
+	// Split input into command and arguments
+	// Find the first word in the input
+	input = strings.TrimSpace(input)
+	spaceIndex := strings.Index(input, " ")
+	if spaceIndex == -1 {
+		return input, []string{}
+	}
+
+	// Get the command and arguments
+	command := input[:spaceIndex]
+	input = input[spaceIndex+1:]
+	arguments := []string{}
+	for len(input) > 0 {
+		if strings.HasPrefix(input, "'") {
+			// Get the argument in single quotes
+			endQuote := strings.Index(input[1:], "'")
+			if endQuote == -1 {
+				return command, []string{}
+			}
+			argument := input[1 : endQuote+1]
+			input = input[endQuote+2:]
+			arguments = append(arguments, argument)
+		} else {
+			// Add the word to the arguments
+			spaceIndex := strings.Index(input, " ")
+			if spaceIndex == -1 {
+				arguments = append(arguments, input)
+				break
+			}
+			arguments = append(arguments, input[:spaceIndex])
+			input = input[spaceIndex+1:]
+		}
+	}
+
+	return command, arguments
 }
