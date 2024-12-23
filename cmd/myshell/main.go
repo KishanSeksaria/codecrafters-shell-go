@@ -230,13 +230,13 @@ func parseInput(input string) (string, []string) {
 	for _, char := range input {
 		switch {
 		case escapeNext:
-			// Handle escaped characters
+			// Always add the escaped character, even in double quotes
 			currentArg += string(char)
 			escapeNext = false
 
 		case char == '\\':
-			// Escape the next character
-			escapeNext = true
+			// Escape the next character only in double quotes or globally outside quotes
+			escapeNext = inDoubleQuotes || !inSingleQuotes
 
 		case char == '\'' && !inDoubleQuotes:
 			// Toggle single-quote state
