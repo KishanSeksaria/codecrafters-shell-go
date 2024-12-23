@@ -208,18 +208,6 @@ func parseInput(input string) (string, []string) {
 		return "", []string{}
 	}
 
-	// Find the command (first word before the first space)
-	spaceIndex := strings.Index(input, " ")
-	var command string
-	if spaceIndex == -1 {
-		// If no spaces, the input is the command with no arguments
-		command = input
-		return command, []string{}
-	} else {
-		command = input[:spaceIndex]
-		input = input[spaceIndex+1:]
-	}
-
 	arguments := []string{}
 	currentArg := ""
 	inSingleQuotes := false
@@ -281,10 +269,6 @@ func parseInput(input string) (string, []string) {
 		arguments = append(arguments, currentArg)
 	}
 
-	// Handle mismatched quotes
-	if inSingleQuotes || inDoubleQuotes {
-		return command, []string{}
-	}
-
-	return command, arguments
+	// Return the command and arguments
+	return arguments[0], arguments[1:]
 }
