@@ -136,8 +136,21 @@ func cd(args []string) {
 		return
 	}
 
-	if err := os.Chdir(args[0]); err != nil {
-		fmt.Printf("cd: %s: No such file or directory\n", args[0])
+	targetDir := args[0]
+
+	// If the target directory is ~, change to the home directory
+	if targetDir == "~" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Printf("error getting home directory: %s\n", err.Error())
+			return
+		}
+		targetDir = homeDir
+	}
+
+	// Change to the target directory
+	if err := os.Chdir(targetDir); err != nil {
+		fmt.Printf("cd: %s: No such file or directory\n", targetDir)
 	}
 }
 
