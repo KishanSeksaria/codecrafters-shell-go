@@ -192,13 +192,17 @@ func parseInput(input string) (string, []string) {
 			input = input[endQuote+2:]
 			arguments = append(arguments, argument)
 		} else {
-			// Add the word to the arguments
+			// Add the word to the arguments, and omit spaces between words
 			spaceIndex := strings.Index(input, " ")
 			if spaceIndex == -1 {
 				arguments = append(arguments, input)
 				break
 			}
-			arguments = append(arguments, input[:spaceIndex])
+			arg := input[:spaceIndex]
+			if strings.TrimSpace(arg) != "" {
+				arguments = append(arguments, arg)
+			}
+
 			input = input[spaceIndex+1:]
 		}
 	}
