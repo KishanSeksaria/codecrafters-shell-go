@@ -250,11 +250,13 @@ func parseInput(input string) (string, []string) {
 			escapeNext = true
 
 		case char == '\'':
-			// Toggle single-quote state (backslashes are treated literally)
-			if inSingleQuotes {
-				inSingleQuotes = false
+			// Handle single quotes
+			if inDoubleQuotes {
+				// Add single quotes literally when inside double quotes
+				currentArg += string(char)
 			} else {
-				inSingleQuotes = true
+				// Toggle single-quote state outside of double quotes
+				inSingleQuotes = !inSingleQuotes
 			}
 
 		case char == '"' && !inSingleQuotes:
