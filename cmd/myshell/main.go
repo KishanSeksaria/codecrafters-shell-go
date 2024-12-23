@@ -160,17 +160,19 @@ func cat(args []string) {
 		return
 	}
 
-	// Read the file
-	file, err := os.Open(args[0])
-	if err != nil {
-		fmt.Printf("cat: %s: No such file or directory\n", args[0])
-		return
-	}
-	defer file.Close()
+	// Read the files
+	for _, arg := range args {
+		file, err := os.Open(arg)
+		if err != nil {
+			fmt.Printf("cat: %s: No such file or directory\n", arg)
+			return
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
 	}
 }
 
