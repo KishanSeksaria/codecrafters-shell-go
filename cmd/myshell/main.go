@@ -17,46 +17,6 @@ type (
 
 var commands = make(map[string]cmdFnc)
 
-func main() {
-	// Initialize commands
-	initCommands()
-
-	// Main loop
-	for {
-		fmt.Print("$ ")
-
-		// Wait for user input
-		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			fmt.Printf("error reading from stdin: %s", err.Error())
-			os.Exit(1)
-		}
-
-		// Parse input
-		inputCommand, commandArguments, outputFile := parseInput(input)
-
-		// Get command execution function
-		execute, ok := commands[inputCommand]
-		if !ok {
-			notFound(inputCommand, commandArguments, outputFile)
-		} else {
-			result := execute(commandArguments)
-			if outputFile != "" {
-				// Write the output to the file
-				file, err := os.Create(outputFile)
-				if err != nil {
-					fmt.Printf("error creating file: %s\n", err.Error())
-					return
-				}
-				defer file.Close()
-				file.WriteString(result + "\n")
-			} else {
-				fmt.Println(result)
-			}
-		}
-	}
-}
-
 // Function to register a command
 func registerCommand(cmd string, fn cmdFnc) {
 	commands[cmd] = fn
@@ -107,6 +67,13 @@ func notFound(cmd string, args []string, outputFile string) {
 	// Run the command
 	if err := command.Run(); err != nil {
 		fmt.Printf("error executing command: %s\n", err.Error())
+	}
+
+	// Explicitly flush the output writer if it's a file
+	if outputFile != "" {
+		if f, ok := outputWriter.(*os.File); ok {
+			f.Sync()
+		}
 	}
 }
 
@@ -325,4 +292,45 @@ func parseInput(input string) (string, []string, string) {
 	}
 
 	return command, arguments, outputFile
+}
+
+// Main function
+func main() {
+	// Initialize commands
+	initCommands()
+
+	// Main loop
+	for {
+		fmt.Print("$ ")
+
+		// Wait for user input
+		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			fmt.Printf("error reading from stdin: %s", err.Error())
+			os.Exit(1)
+		}
+
+		// Parse input
+		inputCommand, commandArguments, outputFile := parseInput(input)
+
+		// Get command execution function
+		execute, ok := commands[inputCommand]
+		if !ok {
+			notFound(inputCommand, commandArguments, outputFile)
+		} else {
+			result := execute(commandArguments)
+			if outputFile != "" {
+				// Write the output to the file
+				file, err := os.Create(outputFile)
+				if err != nil {
+					fmt.Printf("error creating file: %s\n", err.Error())
+					return
+				}
+				defer file.Close()
+				file.WriteString(result + "\n")
+			} else {
+				fmt.Println(result)
+			}
+		}
+	}
 }
