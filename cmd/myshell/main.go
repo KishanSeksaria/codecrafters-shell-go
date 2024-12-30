@@ -58,6 +58,7 @@ func notFound(cmd string, args []string, outputFile string) {
 
 	// Ensure the output is formatted with newlines
 	entries := strings.Fields(string(output))
+	fmt.Println("entries: ", entries)
 	processedOutput := strings.Join(entries, "\n")
 	// processedOutput := string(output)
 
