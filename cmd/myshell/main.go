@@ -54,14 +54,7 @@ func notFound(cmd string, args []string, outputFile string) {
 		return
 	}
 
-	fmt.Println("output: ", string(output))
-
-	// Ensure the output is formatted with newlines
-	entries := strings.Fields(string(output))
-	fmt.Println("entries: ", entries)
-	processedOutput := strings.Join(entries, "\n")
-	fmt.Println("processedOutput: ", processedOutput)
-	// processedOutput := string(output)
+	processedOutput := string(output)
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
@@ -185,7 +178,7 @@ func cat(args []string) string {
 		// Read the file
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			output += scanner.Text()
+			output += "\n" + scanner.Text()
 		}
 	}
 
