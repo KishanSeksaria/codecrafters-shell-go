@@ -304,9 +304,8 @@ func parseInput(input string) (string, []string, string) {
 	return command, arguments, outputFile
 }
 
-// Main function
 // Helper function to write output to a file
-func writeToFile(filename, content string) error {
+func writeToFile(filename string, content string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("error creating file: %s", err.Error())
@@ -324,6 +323,7 @@ func writeToFile(filename, content string) error {
 	return nil
 }
 
+// Main function
 func main() {
 	// Initialize commands
 	initCommands()
@@ -334,32 +334,31 @@ func main() {
 
 		// Wait for user input
 		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
-			if outputFile != "" {
-				if err := writeToFile(outputFile, result); err != nil {
-					fmt.Printf("error: %s\n", err.Error())
-					continue
-				}
-				// If the file does not exist, create it
-				file, err := os.Create(outputFile)
-				if err != nil {
-					fmt.Printf("error creating file: %s\n", err.Error())
-					continue
-				}
-				defer file.Close()
+		if err != nil {
+			fmt.Printf("error reading from stdin: %s", err.Error())
+			os.Exit(1)
+		}
 
-				// Write the processed output to the file
-				writer := bufio.NewWriter(file)
-				_, err = writer.WriteString(result + "\n") // Ensure final newline
-				if err != nil {
-					fmt.Printf("error writing to file: %s\n", err.Error())
-					continue
-				}
+		// Parse input
+		inputCommand, commandArguments, outputFile := parseInput(input)
 
-				// Flush and sync the writer
-				writer.Flush()
-				file.Sync()
-			} else if result != "" {
-				fmt.Println(result)
+		// Get command execution function
+		execute, ok := commands[inputCommand]
+		if !ok {
+			notFound(inputCommand, commandArguments, outputFile)
+		} else {
+			result, err := execute(commandArguments)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				if outputFile != "" {
+					err := writeToFile(outputFile, result)
+					if err != nil {
+						fmt.Println(err)
+					}
+				} else {
+					fmt.Println(result)
+				}
 			}
 		}
 	}
