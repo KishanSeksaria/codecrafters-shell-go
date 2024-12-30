@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -44,8 +45,22 @@ func notFound(cmd string, args []string, outputFile string) {
 	// Prepare the command execution
 	command := exec.Command(cmdPath, args...)
 
-	// Redirect output to a file or Stdout
-	var outputWriter io.Writer
+	// Use a buffer to capture the command's output
+	var outputBuffer bytes.Buffer
+	command.Stdout = &outputBuffer
+	command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+
+	// Run the command
+	if err := command.Run(); err != nil {
+		fmt.Printf("error executing command: %s\n", err.Error())
+		return
+	}
+
+	// Process the output to remove newlines
+	processedOutput := strings.ReplaceAll(outputBuffer.String(), "\n", "")
+
+	// Write the processed output to the file or Stdout
 	if outputFile != "" {
 		// If the file does not exist, create it
 		file, err := os.Create(outputFile)
@@ -54,27 +69,17 @@ func notFound(cmd string, args []string, outputFile string) {
 			return
 		}
 		defer file.Close()
-		// Use MultiWriter to write to both file and stdout
-		outputWriter = file
-	} else {
-		outputWriter = os.Stdout
-	}
 
-	// Attach output writers for Stdout and Stderr
-	command.Stdout = outputWriter
-	command.Stderr = os.Stderr
-	command.Stdin = os.Stdin
-
-	// Run the command
-	if err := command.Run(); err != nil {
-		fmt.Printf("error executing command: %s\n", err.Error())
-	}
-
-	// Explicitly flush the output writer if it's a file
-	if outputFile != "" {
-		if f, ok := outputWriter.(*os.File); ok {
-			f.Sync()
+		// Write the processed output to the file
+		if _, err := file.WriteString(processedOutput); err != nil {
+			fmt.Printf("error writing to file: %s\n", err.Error())
 		}
+
+		// Ensure data is flushed to disk
+		file.Sync()
+	} else {
+		// Print the processed output to Stdout
+		fmt.Print(processedOutput)
 	}
 }
 
