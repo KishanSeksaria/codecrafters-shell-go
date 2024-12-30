@@ -55,7 +55,7 @@ func notFound(cmd string, args []string, outputFile string) {
 		}
 		defer file.Close()
 		// Use MultiWriter to write to both file and stdout
-		outputWriter = io.MultiWriter(file, os.Stdout)
+		outputWriter = file
 	} else {
 		outputWriter = os.Stdout
 	}
