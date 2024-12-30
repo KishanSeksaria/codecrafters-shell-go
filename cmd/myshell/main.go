@@ -60,6 +60,7 @@ func notFound(cmd string, args []string, outputFile string) {
 	entries := strings.Fields(string(output))
 	fmt.Println("entries: ", entries)
 	processedOutput := strings.Join(entries, "\n")
+	fmt.Println("processedOutput: ", processedOutput)
 	// processedOutput := string(output)
 
 	// Write the processed output to the file or Stdout
