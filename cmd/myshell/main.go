@@ -43,7 +43,7 @@ func notFound(cmd string, args []string, outputFile string) {
 	// Prepare the command execution
 	command := exec.Command(cmdPath, args...)
 
-	// Use a buffer to capture the command's output
+	// Redirect Stderr and Stdin
 	command.Stderr = os.Stderr
 	command.Stdin = os.Stdin
 
@@ -54,8 +54,9 @@ func notFound(cmd string, args []string, outputFile string) {
 		return
 	}
 
-	// Ensure output entries are separated by newlines
-	// output = append(output, '\n')
+	// Ensure the output is formatted with newlines
+	entries := strings.Fields(string(output))
+	processedOutput := strings.Join(entries, "\n")
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
@@ -69,13 +70,18 @@ func notFound(cmd string, args []string, outputFile string) {
 
 		// Write the processed output to the file
 		writer := bufio.NewWriter(file)
-		writer.Write(output)
+		_, err = writer.WriteString(processedOutput + "\n") // Ensure final newline
+		if err != nil {
+			fmt.Printf("error writing to file: %s\n", err.Error())
+			return
+		}
 
-		// Ensure data is flushed to disk
+		// Flush and sync the writer
+		writer.Flush()
 		file.Sync()
 	} else {
 		// Print the processed output to Stdout
-		fmt.Println(string(output))
+		fmt.Println(processedOutput)
 	}
 }
 
