@@ -55,9 +55,9 @@ func notFound(cmd string, args []string, outputFile string) {
 	}
 
 	// Ensure the output is formatted with newlines
-	// entries := strings.Fields(string(output))
-	// processedOutput := strings.Join(entries, "\n")
-	processedOutput := string(output)
+	entries := strings.Fields(string(output))
+	processedOutput := strings.Join(entries, "\n")
+	// processedOutput := string(output)
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
