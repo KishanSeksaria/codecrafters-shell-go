@@ -57,11 +57,11 @@ func notFound(cmd string, args []string, outputFile string) {
 		return
 	}
 
-	// Process the output to ensure it ends with a newline
-	processedOutput := outputBuffer.String()
-	if !strings.HasSuffix(processedOutput, "\n") {
-		processedOutput += "\n"
-	}
+	// Ensure output entries are separated by newlines
+	// Split the output into parts based on any potential delimiters, then join with newlines
+	rawOutput := outputBuffer.String()
+	entries := strings.Fields(rawOutput) // Splits by whitespace
+	processedOutput := strings.Join(entries, "\n")
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
@@ -74,7 +74,7 @@ func notFound(cmd string, args []string, outputFile string) {
 		defer file.Close()
 
 		// Write the processed output to the file
-		if _, err := file.WriteString(processedOutput); err != nil {
+		if _, err := file.WriteString(processedOutput + "\n"); err != nil {
 			fmt.Printf("error writing to file: %s\n", err.Error())
 		}
 
@@ -82,7 +82,7 @@ func notFound(cmd string, args []string, outputFile string) {
 		file.Sync()
 	} else {
 		// Print the processed output to Stdout
-		fmt.Print(processedOutput)
+		fmt.Println(processedOutput)
 	}
 }
 
