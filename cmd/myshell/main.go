@@ -329,15 +329,25 @@ func main() {
 		} else {
 			result := execute(commandArguments)
 			if outputFile != "" {
-				// Write the output to both file and stdout
+				// If the file does not exist, create it
 				file, err := os.Create(outputFile)
 				if err != nil {
 					fmt.Printf("error creating file: %s\n", err.Error())
 					return
 				}
 				defer file.Close()
+
+				// Write the processed output to the file
 				writer := bufio.NewWriter(file)
-				writer.Write([]byte(result))
+				_, err = writer.WriteString(result + "\n") // Ensure final newline
+				if err != nil {
+					fmt.Printf("error writing to file: %s\n", err.Error())
+					return
+				}
+
+				// Flush and sync the writer
+				writer.Flush()
+				file.Sync()
 			} else {
 				fmt.Println(result)
 			}
