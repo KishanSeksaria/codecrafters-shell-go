@@ -55,8 +55,8 @@ func notFound(cmd string, args []string, outputFile string) {
 	}
 
 	// Ensure output entries are separated by newlines
-	// Split the output into parts based on any potential delimiters, then join with newlines
-	fmt.Println("output: ", string(output))
+	output = append(output, '\n')
+	fmt.Println("Output: ", string(output))
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
