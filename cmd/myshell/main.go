@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -336,7 +335,7 @@ func main() {
 					return
 				}
 				defer file.Close()
-				writer := io.MultiWriter(file, os.Stdout)
+				writer := bufio.NewWriter(file)
 				writer.Write([]byte(result))
 			} else {
 				fmt.Println(result)
