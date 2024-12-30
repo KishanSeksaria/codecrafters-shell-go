@@ -178,7 +178,7 @@ func cat(args []string) string {
 		// Read the file
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			output += scanner.Text()
+			output += scanner.Text() + "\n"
 		}
 	}
 
