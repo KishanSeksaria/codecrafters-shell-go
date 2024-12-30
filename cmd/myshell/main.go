@@ -169,6 +169,8 @@ func cat(args []string) string {
 
 	// Read the files
 	for _, arg := range args {
+		// Open the file
+		fmt.Println("Opening file: ", arg)
 		file, err := os.Open(arg)
 		if err != nil {
 			return fmt.Sprintf("cat: %s: No such file or directory", arg)
