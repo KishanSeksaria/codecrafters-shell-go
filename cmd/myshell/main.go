@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -45,22 +44,19 @@ func notFound(cmd string, args []string, outputFile string) {
 	command := exec.Command(cmdPath, args...)
 
 	// Use a buffer to capture the command's output
-	var outputBuffer bytes.Buffer
-	command.Stdout = &outputBuffer
 	command.Stderr = os.Stderr
 	command.Stdin = os.Stdin
 
-	// Run the command
-	if err := command.Run(); err != nil {
+	// Run the command and get the output
+	output, err := command.Output()
+	if err != nil {
 		fmt.Printf("error executing command: %s\n", err.Error())
 		return
 	}
 
 	// Ensure output entries are separated by newlines
 	// Split the output into parts based on any potential delimiters, then join with newlines
-	rawOutput := outputBuffer.String()
-	entries := strings.Fields(rawOutput) // Splits by whitespace
-	processedOutput := strings.Join(entries, "\n")
+	fmt.Println("output: ", string(output))
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
@@ -73,15 +69,14 @@ func notFound(cmd string, args []string, outputFile string) {
 		defer file.Close()
 
 		// Write the processed output to the file
-		if _, err := file.WriteString(processedOutput + "\n"); err != nil {
-			fmt.Printf("error writing to file: %s\n", err.Error())
-		}
+		writer := bufio.NewWriter(file)
+		writer.Write(output)
 
 		// Ensure data is flushed to disk
 		file.Sync()
 	} else {
 		// Print the processed output to Stdout
-		fmt.Println(processedOutput)
+		fmt.Println(string(output))
 	}
 }
 
