@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	cmdFnc func([]string) string
+	cmdFnc func([]string) (string, error)
 )
 
 var commands = make(map[string]cmdFnc)
@@ -84,25 +84,25 @@ func notFound(cmd string, args []string, outputFile string) {
 }
 
 // Command functions: exit command
-func exit(args []string) string {
+func exit(args []string) (string, error) {
 	if len(args) == 0 {
 		os.Exit(1)
 	}
 	if code, err := strconv.Atoi(args[0]); err == nil {
 		os.Exit(code)
 	}
-	return ""
+	return "", nil
 }
 
 // Command functions: echo command
-func echo(args []string) string {
-	return strings.Join(args, " ")
+func echo(args []string) (string, error) {
+	return strings.Join(args, " "), nil
 }
 
 // Command functions: type command
-func type_(args []string) string {
+func type_(args []string) (string, error) {
 	if len(args) == 0 {
-		return "type: usage: type <command>"
+		return "", fmt.Errorf("type: usage: type <command>")
 	}
 
 	command := args[0]
@@ -111,7 +111,7 @@ func type_(args []string) string {
 	if command != "cat" {
 		_, builtin := commands[command]
 		if builtin {
-			return fmt.Sprintf("%s is a shell builtin", command)
+			return fmt.Sprintf("%s is a shell builtin", command), nil
 		}
 	}
 
@@ -119,25 +119,25 @@ func type_(args []string) string {
 	cmdPath, err := findCommandInPath(command)
 
 	if err != nil {
-		return fmt.Sprintf("%s: not found", command)
+		return "", fmt.Errorf("%s: not found", command)
 	} else {
-		return fmt.Sprintf("%s is %s", command, cmdPath)
+		return fmt.Sprintf("%s is %s", command, cmdPath), nil
 	}
 }
 
 // Command functions: pwd command
-func pwd(args []string) string {
+func pwd(args []string) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return fmt.Sprintf("error getting current directory: %s", err.Error())
+		return "", fmt.Errorf("error getting current directory: %s", err.Error())
 	}
-	return dir
+	return dir, nil
 }
 
 // Command functions: cd command
-func cd(args []string) string {
+func cd(args []string) (string, error) {
 	if len(args) == 0 {
-		return "cd: usage: cd <directory>"
+		return "", fmt.Errorf("cd: usage: cd <directory>")
 	}
 
 	targetDir := args[0]
@@ -146,23 +146,23 @@ func cd(args []string) string {
 	if targetDir == "~" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			return fmt.Sprintf("error getting home directory: %s", err.Error())
+			return "", fmt.Errorf("error getting home directory: %s", err.Error())
 		}
 		targetDir = homeDir
 	}
 
 	// Change to the target directory
 	if err := os.Chdir(targetDir); err != nil {
-		return fmt.Sprintf("cd: %s: No such file or directory", targetDir)
+		return "", fmt.Errorf("cd: %s: No such file or directory", targetDir)
 	} else {
-		return ""
+		return "", nil
 	}
 }
 
 // Command functions: cat command
-func cat(args []string) string {
+func cat(args []string) (string, error) {
 	if len(args) == 0 {
-		return "cat: usage: cat <file1> <file2> ..."
+		return "", fmt.Errorf("cat: usage: cat <file1> <file2> ...")
 	}
 
 	output := ""
@@ -172,7 +172,7 @@ func cat(args []string) string {
 		// Open the file
 		file, err := os.Open(arg)
 		if err != nil {
-			return fmt.Sprintf("cat: %s: No such file or directory", arg)
+			return "", fmt.Errorf("cat: %s: No such file or directory", arg)
 		}
 		defer file.Close()
 
@@ -186,7 +186,7 @@ func cat(args []string) string {
 		}
 	}
 
-	return output
+	return output, nil
 }
 
 // Helper functions
@@ -305,6 +305,25 @@ func parseInput(input string) (string, []string, string) {
 }
 
 // Main function
+// Helper function to write output to a file
+func writeToFile(filename, content string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("error creating file: %s", err.Error())
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	_, err = writer.WriteString(content + "\n") // Ensure final newline
+	if err != nil {
+		return fmt.Errorf("error writing to file: %s", err.Error())
+	}
+
+	writer.Flush()
+	file.Sync()
+	return nil
+}
+
 func main() {
 	// Initialize commands
 	initCommands()
@@ -315,26 +334,16 @@ func main() {
 
 		// Wait for user input
 		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			fmt.Printf("error reading from stdin: %s", err.Error())
-			os.Exit(1)
-		}
-
-		// Parse input
-		inputCommand, commandArguments, outputFile := parseInput(input)
-
-		// Get command execution function
-		execute, ok := commands[inputCommand]
-		if !ok {
-			notFound(inputCommand, commandArguments, outputFile)
-		} else {
-			result := execute(commandArguments)
 			if outputFile != "" {
+				if err := writeToFile(outputFile, result); err != nil {
+					fmt.Printf("error: %s\n", err.Error())
+					continue
+				}
 				// If the file does not exist, create it
 				file, err := os.Create(outputFile)
 				if err != nil {
 					fmt.Printf("error creating file: %s\n", err.Error())
-					return
+					continue
 				}
 				defer file.Close()
 
@@ -343,13 +352,13 @@ func main() {
 				_, err = writer.WriteString(result + "\n") // Ensure final newline
 				if err != nil {
 					fmt.Printf("error writing to file: %s\n", err.Error())
-					return
+					continue
 				}
 
 				// Flush and sync the writer
 				writer.Flush()
 				file.Sync()
-			} else {
+			} else if result != "" {
 				fmt.Println(result)
 			}
 		}
