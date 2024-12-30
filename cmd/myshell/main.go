@@ -326,7 +326,7 @@ func main() {
 		execute, ok := commands[inputCommand]
 		if !ok {
 			notFound(inputCommand, commandArguments, outputFile)
-		} else {
+		} else if inputCommand != "cat" {
 			result := execute(commandArguments)
 			if outputFile != "" {
 				// Write the output to both file and stdout
