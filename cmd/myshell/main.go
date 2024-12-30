@@ -57,8 +57,11 @@ func notFound(cmd string, args []string, outputFile string) {
 		return
 	}
 
-	// Process the output to remove newlines
-	processedOutput := strings.ReplaceAll(outputBuffer.String(), "\n", "")
+	// Process the output to ensure it ends with a newline
+	processedOutput := outputBuffer.String()
+	if !strings.HasSuffix(processedOutput, "\n") {
+		processedOutput += "\n"
+	}
 
 	// Write the processed output to the file or Stdout
 	if outputFile != "" {
